@@ -64,10 +64,15 @@ namespace Tesis_RFID_Integration
                 {
                     if (RFID.CFHidApi.CFHid_GetDeviceSystemInfo(0xFF, arrBuffer) == false) //获取系统信息失败
                     {
+
+
                         SetText("No se pudo obtener la informacion del dispositivo\r\n");
                         CFHidApi.CFHid_CloseDevice();
                         return;
                     }
+                       var resp = CFHidApi.CFHid_GetDeviceSystemInfo(0xFF, arrBuffer);
+                    System.Diagnostics.Debug.WriteLine("arrBuffer: ", arrBuffer.ToString());
+                    //    System.Diagnostics.Debug.WriteLine("resp deviceSystemInfo", resp.ToString());
                     SetText("Conección Exitosa\r\n");
                     btnConnect.Text = "Desconectar";
                 }
@@ -76,7 +81,7 @@ namespace Tesis_RFID_Integration
                     this.SetText("Coneccion Fallida\r\n");
                     return;
                 }
-                System.Diagnostics.Debug.WriteLine("Entra al IF");
+                //System.Diagnostics.Debug.WriteLine("Entra al IF");
 
                 string str = "", str1 = "";
                 str = String.Format("SoftVer:{0:D}.{0:D}\r\n", arrBuffer[0] >> 4, arrBuffer[0] & 0x0F);
@@ -140,7 +145,7 @@ namespace Tesis_RFID_Integration
 
             System.Diagnostics.Debug.WriteLine(readInfo);
             timer1.Interval = 100;
-            //timer1.Enabled = true;
+            timer1.Enabled = true;
             //button6.Enabled = false;
             //button11.Enabled = true;
         }
@@ -177,16 +182,18 @@ namespace Tesis_RFID_Integration
 
             System.Diagnostics.Debug.WriteLine("bRet: ", bRet);
 
-            if (bRet == 1)
-            {
-                this.SetText("DevOut");
-                return; //DevOut
-            }
-            else if (bRet == 0) {
-                System.Diagnostics.Debug.WriteLine("bRet: 0?");
+            System.Diagnostics.Debug.WriteLine("bRet data: ", arrBuffer, iTotalLen, iNum);
 
-                return;
-            }; //No Connect
+            //if (bRet == 1)
+            //{
+            //    this.SetText("DevOut");
+            //    return; //DevOut
+            //}
+            //else if (bRet == 0) {
+            //    System.Diagnostics.Debug.WriteLine("bRet: 0?");
+
+            //    return;
+            //}; //No Connect
             int iTagLength = 0;
             int iTagNumber = 0;
             iTagLength = iTotalLen;
