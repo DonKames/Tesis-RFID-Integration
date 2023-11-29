@@ -36,6 +36,8 @@
             cboBoxUSB = new ComboBox();
             textBox1 = new TextBox();
             grpBoxLecturas = new GroupBox();
+            lblEPC = new Label();
+            label1 = new Label();
             btnReadOnce = new Button();
             btnStopRead = new Button();
             btnStartRead = new Button();
@@ -101,11 +103,14 @@
             textBox1.Location = new Point(12, 295);
             textBox1.Multiline = true;
             textBox1.Name = "textBox1";
+            textBox1.ScrollBars = ScrollBars.Vertical;
             textBox1.Size = new Size(528, 143);
             textBox1.TabIndex = 3;
             // 
             // grpBoxLecturas
             // 
+            grpBoxLecturas.Controls.Add(lblEPC);
+            grpBoxLecturas.Controls.Add(label1);
             grpBoxLecturas.Controls.Add(btnReadOnce);
             grpBoxLecturas.Controls.Add(btnStopRead);
             grpBoxLecturas.Controls.Add(btnStartRead);
@@ -116,6 +121,24 @@
             grpBoxLecturas.TabStop = false;
             grpBoxLecturas.Text = "Lecturas";
             // 
+            // lblEPC
+            // 
+            lblEPC.AutoSize = true;
+            lblEPC.Location = new Point(43, 84);
+            lblEPC.Name = "lblEPC";
+            lblEPC.Size = new Size(16, 15);
+            lblEPC.TabIndex = 4;
+            lblEPC.Text = "...";
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(6, 84);
+            label1.Name = "label1";
+            label1.Size = new Size(31, 15);
+            label1.TabIndex = 3;
+            label1.Text = "EPC:";
+            // 
             // btnReadOnce
             // 
             btnReadOnce.Location = new Point(6, 51);
@@ -124,6 +147,7 @@
             btnReadOnce.TabIndex = 2;
             btnReadOnce.Text = "Lectura Unica";
             btnReadOnce.UseVisualStyleBackColor = true;
+            btnReadOnce.Click += btnReadOnce_Click;
             // 
             // btnStopRead
             // 
@@ -162,6 +186,7 @@
             grpBoxConnection.ResumeLayout(false);
             grpBoxConnection.PerformLayout();
             grpBoxLecturas.ResumeLayout(false);
+            grpBoxLecturas.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -179,5 +204,7 @@
         private Button btnStopRead;
         private Button btnStartRead;
         private System.Windows.Forms.Timer timer1;
+        private Label label1;
+        private Label lblEPC;
     }
 }
