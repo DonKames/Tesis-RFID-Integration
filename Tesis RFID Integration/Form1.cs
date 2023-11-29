@@ -1,6 +1,8 @@
 ﻿using RFID;
 using System;
+using System.Reflection;
 using System.Text;
+using Tesis_RFID_Integration.models;
 
 namespace Tesis_RFID_Integration
 {
@@ -143,146 +145,281 @@ namespace Tesis_RFID_Integration
 
         private void btnStartRead_Click(object sender, EventArgs e)
         {
-            CFHidApi.CFHid_ClearTagBuf();
-            //bool readInfo = CFHidApi.CFHid_StartRead(0xFF);
-            //if (readInfo)
-            //{
-            SetText("Iniciando lectura...\r\n");
-            timer1.Interval = 100;
-            timer1.Enabled = true;
-            //}
-            //else
-            //{
-            //    SetText("Error al iniciar la lectura.\r\n");
-            //}
-            //SetText("Leyendo\r\n");
-            //bool readInfo;
+            // Verificacion del modo del lector.
+            byte bParamAddr = 0;
+            byte[] bValue = new byte[2];
 
-            //readInfo = CFHidApi.CFHid_StartRead(0xFF);
+            /*  01: Transport
+                02: WorkMode
+                03: DeviceAddr
+                04: FilterTime
+                05: RFPower
+                06: BeepEnable
+                07: UartBaudRate*/
+            bParamAddr = 0x02;
+
+            if (CFHidApi.CFHid_ReadDeviceOneParam(0xFF, bParamAddr, bValue) == false)
+            {
+                SetText("No se pudo recuperar el modo del lector.");
+                return;
+            }
+
+            // Si el lector no esta en modo activa, se setea el estado mencionado
+            if (bValue[0] != 01)
+            {
+                System.Diagnostics.Debug.WriteLine("Cambiando a Modo Activo");
+
+                byte paramToSet = 0;
+                byte valueToSet = 0;
+
+                /*  01: Transport
+                    02: WorkMode
+                    03: DeviceAddr
+                    04: FilterTime
+                    05: RFPower
+                    06: BeepEnable
+                    07: UartBaudRate*/
+                paramToSet = 0x02;
+
+                // ActiveMode = 01
+                valueToSet = 01;
+
+                if (CFHidApi.CFHid_SetDeviceOneParam(0xFF, paramToSet, valueToSet) == false)
+                {
+                    SetText("Fallo el Seteo al Modo Activo");
+                    return;
+                }
+                SetText("Modo Activo Seteado");
+
+                //CFHidApi.CFHid_StopRead(0xFF);
+            }
+            else
+            {
+                SetText("Modo Activo Listo\r\n");
+            }
+            string str = BitConverter.ToString(bValue);
+            System.Diagnostics.Debug.WriteLine("get: ", str);
+
 
             //CFHidApi.CFHid_ClearTagBuf();
+            bool readInfo = CFHidApi.CFHid_StartRead(0xFF);
 
-            //System.Diagnostics.Debug.WriteLine(timer1.Enabled);
-
-
-            //System.Diagnostics.Debug.WriteLine(readInfo);
-            //timer1.Interval = 100;
-            //timer1.Enabled = true;
-            //button6.Enabled = false;
-            //button11.Enabled = true;
+            SetText("Iniciando lectura...\r\n");
+            timer1.Interval = 1000;
+            timer1.Enabled = true;
         }
 
 
         private void btnStopRead_Click(object sender, EventArgs e)
         {
             timer1.Enabled = false;
-
             CFHidApi.CFHid_StopRead(0xFF);
-
-            byte[] arrBuffer = new byte[64000];
-            int iNum = 0;
-            int iTotalLen = 0;
-            byte bRet = 0;
-
-            bRet = CFHidApi.CFHid_GetTagBuf(arrBuffer, out iTotalLen, out iNum);
-
-            System.Diagnostics.Debug.WriteLine("bRet: ", bRet);
         }
 
 
         private void timer1_Tick(object sender, EventArgs e)
         {
-            byte[] buffer = new byte[1024];
-            ushort totalLength = 0;
-            ushort cardNum = 0;
-            if (CFHidApi.CFHid_InventoryG2(0xFF, buffer, out totalLength, out cardNum))
+
+            byte[] arrBuffer = new byte[64000];
+            byte bRet;
+            List<Reading> lecturas = new List<Reading>();
+
+
+            bRet = CFHidApi.CFHid_GetTagBuf(arrBuffer, out int iTotalLen, out int iNum);
+            if (bRet == 1)
             {
-                if (cardNum > 0)
-                {
-                    int index = 0;
-                    for (int i = 0; i < cardNum; i++)
-                    {
-                        StringBuilder epc = new StringBuilder();
-                        for (int j = 0; j < 12; j++) // Asumiendo que el EPC tiene 12 bytes
-                        {
-                            epc.AppendFormat("{0:X2} ", buffer[index + j]);
-                        }
-                        index += 12;
-                        SetText("EPC: " + epc.ToString() + "\r\n");
-                    }
+                SetText("DevOut");
+                return; //DevOut
+            }
+            else if (bRet == 0) return; //No Connect
+            int iTagLength = 0;
+            int iTagNumber = 0;
+            iTagLength = iTotalLen;
+            iTagNumber = iNum;
+            if (iTagNumber == 0) return;
+            //int iIndex = 0;
+            int iLength = 0;
+            byte bPackLength;
+            int i;
+            int iIDLen;
+            for (int iIndex = 0; iIndex < iTagNumber; iIndex++)
+            {
+                
+                bPackLength = arrBuffer[iLength];
+                string str2 = "";
+                string str1 = "";
+                str1 = arrBuffer[1 + iLength + 0].ToString("X2");
+
+                // Type 
+                string type = str1;
+
+                str2 = str2 + "Type:" + str1 + " ";  //Tag Type
+                if ((arrBuffer[1 + iLength + 0] & 0x80) == 0x80)
+                {   // with TimeStamp , last 6 bytes is time
+                    iIDLen = bPackLength - 7;
                 }
+                else iIDLen = bPackLength - 1;
+
+                str1 = arrBuffer[1 + iLength + 1].ToString("X2");
+
+                // Antenna
+                string antenna = str1;
+
+                str2 = str2 + "Ant:" + str1 + " Tag:";  //Ant
+
+                string str3 = "";
+                for (i = 2; i < iIDLen; i++)
+                {
+                    str1 = arrBuffer[1 + iLength + i].ToString("X2");
+                    str3 = str3 + str1 + " ";
+                }
+
+                // EPC
+                string epc = str3;
+
+                str2 = str2 + str3;
+                str1 = arrBuffer[1 + iLength + i].ToString("X2");
+
+                // RSSI
+                string rssi = str1;
+
+                str2 = str2 + "RSSI:" + str1 + "\r\n";  //RSSI
+                iLength = iLength + bPackLength + 1;
+
+                Reading lectura = new Reading
+                {
+                    //Type = arrBuffer[1 + iLength + 0].ToString("X2"),
+                    Type = type,
+                    //Antenna = arrBuffer[1 + iLength + 1].ToString("X2"),
+                    Antenna = antenna,
+                    //Tag = "", // Aquí debes agregar la representación adecuada del Tag
+                    EPC = epc,
+                    //RSSI = arrBuffer[1 + iLength + i].ToString("X2")
+                    RSSI = rssi,
+                };
+
+                lecturas.Add( lectura );
+
+                SetText(str2);
             }
 
-            // VENIA
-            //System.Diagnostics.Debug.WriteLine("entro al timer");
-            //byte[] arrBuffer = new byte[64000];
-            //int iNum = 0;
-            //int iTotalLen = 0;
-            //byte bRet = 0;
-
-            //bRet = CFHidApi.CFHid_GetTagBuf(arrBuffer, out iTotalLen, out iNum);
-
-            //for (int j = 0; j < arrBuffer.Length; j++)
-            //{
-            //    System.Diagnostics.Debug.WriteLine($"arrBuffer[{j}]: {arrBuffer[j]:X2} (Hex) - {arrBuffer[j]} (Dec)");
-
-            //}
-
-            //System.Diagnostics.Debug.WriteLine("arrBuffer.Length: ", arrBuffer.Length.ToString());
-
-            //System.Diagnostics.Debug.WriteLine("bRet: ", bRet);
-
-            //System.Diagnostics.Debug.WriteLine("bRet data: ", arrBuffer, iTotalLen, iNum);
-
-            ////if (bRet == 1)
-            ////{
-            ////    this.SetText("DevOut");
-            ////    return; //DevOut
-            ////}
-            ////else if (bRet == 0) {
-            ////    System.Diagnostics.Debug.WriteLine("bRet: 0?");
-
-            ////    return;
-            ////}; //No Connect
-            //int iTagLength = 0;
-            //int iTagNumber = 0;
-            //iTagLength = iTotalLen;
-            //iTagNumber = iNum;
-            //if (iTagNumber == 0) return;
-            //int iIndex = 0;
-            //int iLength = 0;
-            //byte bPackLength = 0;
-            //int i = 0;
-            //int iIDLen = 0;
-            //for (iIndex = 0; iIndex < iTagNumber; iIndex++)
-            //{
-            //    bPackLength = arrBuffer[iLength];
-            //    string str2 = "";
-            //    string str1 = "";
-            //    str1 = arrBuffer[1 + iLength + 0].ToString("X2");
-            //    str2 = str2 + "Type:" + str1 + " ";  //Tag Type
-            //    if ((arrBuffer[1 + iLength + 0] & 0x80) == 0x80)
-            //    {   // with TimeStamp , last 6 bytes is time
-            //        iIDLen = bPackLength - 7;
-            //    }
-            //    else iIDLen = bPackLength - 1;
-
-            //    str1 = arrBuffer[1 + iLength + 1].ToString("X2");
-            //    str2 = str2 + "Ant:" + str1 + " Tag:";  //Ant
-
-            //    string str3 = "";
-            //    for (i = 2; i < iIDLen; i++)
-            //    {
-            //        str1 = arrBuffer[1 + iLength + i].ToString("X2");
-            //        str3 = str3 + str1 + " ";
-            //    }
-            //    str2 = str2 + str3;
-            //    str1 = arrBuffer[1 + iLength + i].ToString("X2");
-            //    str2 = str2 + "RSSI:" + str1 + "\r\n";  //RSSI
-            //    iLength = iLength + bPackLength + 1;
-            //    this.SetText(str2);
-            //}
+            foreach (var lectura in lecturas)
+            {
+                string output = $"Type: {lectura.Type}, Antenna: {lectura.Antenna}, Tag: {lectura.EPC}, RSSI: {lectura.RSSI}";
+                System.Diagnostics.Debug.WriteLine(output);
+            }
         }
+
+            // FUNCANDO
+        //{
+        //    byte[] arrBuffer = new byte[64000];  // Tamaño del buffer según tu necesidad
+        //    //int totalLength;
+        //    //int tagNumber;
+
+        //    byte result = CFHidApi.CFHid_GetTagBuf(arrBuffer, out int totalLength, out int tagNumber);
+
+        //    System.Diagnostics.Debug.WriteLine(result);
+
+        //    System.Diagnostics.Debug.WriteLine(result.ToString("X2"));
+
+        //    if (result == 2)
+        //    {
+        //        System.Diagnostics.Debug.WriteLine("Positivo: TotalLength={0}, TagNumber={1}", totalLength, tagNumber);
+
+        //        if (tagNumber == 0) return;
+
+        //        int iLength = 0;
+
+        //        for (int i = 0; i < tagNumber; i++)
+        //        {
+        //            byte bPackLength = arrBuffer[iLength];
+        //            int iIDLen;
+        //            bool hasTimestamp = (arrBuffer[1 + iLength] & 0x80) == 0x80;
+
+        //            System.Diagnostics.Debug.WriteLine("bpackLength: {0}", bPackLength);
+
+        //            // Tipo de Tag
+        //            string tagType = arrBuffer[1 + iLength].ToString("X2");
+
+        //            // Verificación de Timestamp
+        //            if ((arrBuffer[1 + iLength] & 0x80) == 0x80)
+        //            {
+        //                iIDLen = bPackLength - 7;
+        //            }
+        //            else
+        //            {
+        //                iIDLen = bPackLength - 1;
+        //            }
+
+        //            // Número de Antena
+        //            string antNumber = arrBuffer[2 + iLength].ToString("X2");
+
+        //            // ID del Tag
+        //            string tagID = "";
+        //            for (int j = 3; j < 3 + iIDLen; j++)
+        //            {
+        //                tagID += arrBuffer[iLength + j].ToString("X2") + " ";
+        //            }
+
+        //            string timestamp = "";
+
+        //            if (hasTimestamp)
+        //            {
+        //                System.Diagnostics.Debug.WriteLine("Tiene timestamp");
+        //                // Asumiendo que el Timestamp son los últimos 6 bytes del paquete
+        //                int timestampStartIndex = iLength + bPackLength - 6;
+        //                for (int j = timestampStartIndex; j < timestampStartIndex + 6; j++)
+        //                {
+        //                    timestamp += arrBuffer[j].ToString("X2") + " ";
+        //                }
+        //            }
+        //            else
+        //            {
+        //                System.Diagnostics.Debug.WriteLine("sin timestamp");
+
+        //            }
+
+        //            // RSSI
+        //            string rssi = arrBuffer[3 + iLength + iIDLen].ToString("X2");
+
+        //            // Impresión de la información del tag
+        //            System.Diagnostics.Debug.WriteLine("Tag {0}: Tipo={1}, Antena={2}, ID={3}, RSSI={4}, Timestamp={5}", i + 1, tagType, antNumber, tagID, rssi, timestamp);
+
+        //            // Actualizar índice para el siguiente tag
+        //            iLength += (bPackLength + 1);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        SetText("Fallo al recuperar buffer de tags.\r\n");
+        //        System.Diagnostics.Debug.WriteLine("Negativo: {0}, {1}", totalLength, tagNumber);
+        //    }
+
+
+
+
+        //    // MODO A LA MALA
+        //    //byte[] buffer = new byte[1024];
+        //    //ushort totalLength = 0;
+        //    //ushort cardNum = 0;
+        //    //if (CFHidApi.CFHid_InventoryG2(0xFF, buffer, out totalLength, out cardNum))
+        //    //{
+        //    //    if (cardNum > 0)
+        //    //    {
+        //    //        int index = 0;
+        //    //        for (int i = 0; i < cardNum; i++)
+        //    //        {
+        //    //            StringBuilder epc = new StringBuilder();
+        //    //            for (int j = 0; j < 12; j++) // Asumiendo que el EPC tiene 12 bytes
+        //    //            {
+        //    //                epc.AppendFormat("{0:X2} ", buffer[index + j]);
+        //    //            }
+        //    //            index += 12;
+        //    //            SetText("EPC: " + epc.ToString() + "\r\n");
+        //    //        }
+        //    //    }
+        //    //}
+        //}
 
         private void btnReadOnce_Click(object sender, EventArgs e)
         {
@@ -330,6 +467,84 @@ namespace Tesis_RFID_Integration
                 SetText("Sin lectura de Tags.\r\n");
                 return;
             }
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            byte[] arrBuffer = new byte[64000];  // Tamaño del buffer según necesidad
+            int totalLength = 0;
+            int tagNumber = 0;
+
+            byte result = CFHidApi.CFHid_GetTagBuf(arrBuffer, out totalLength, out tagNumber);
+
+            System.Diagnostics.Debug.WriteLine(result);
+
+            System.Diagnostics.Debug.WriteLine(result.ToString("X2"));
+
+            if (result == 2)
+            {
+                System.Diagnostics.Debug.WriteLine("Positivo: {0}, {1}", totalLength, tagNumber);
+
+            }
+            else
+            {
+                SetText("Fallo al recuperar buffer de tags.");
+                System.Diagnostics.Debug.WriteLine("Negativo: {0}, {1}", totalLength, tagNumber);
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            byte bParamAddr = 0;
+            byte[] bValue = new byte[2];
+
+            /*  01: Transport
+                02: WorkMode
+                03: DeviceAddr
+                04: FilterTime
+                05: RFPower
+                06: BeepEnable
+                07: UartBaudRate*/
+            bParamAddr = 0x02;
+
+            if (CFHidApi.CFHid_ReadDeviceOneParam(0xFF, bParamAddr, bValue) == false)
+            {
+                this.SetText("Faild");
+                return;
+            }
+            else
+            {
+                string str = BitConverter.ToString(bValue);
+                System.Diagnostics.Debug.WriteLine("get: {0} ", str);
+                System.Diagnostics.Debug.WriteLine("get: {0}", BitConverter.ToString(bValue));
+
+                //this.SetText();
+            }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            byte bParamAddr = 0;
+            byte bValue = 0;
+
+            /*  01: Transport
+                02: WorkMode
+                03: DeviceAddr
+                04: FilterTime
+                05: RFPower
+                06: BeepEnable
+                07: UartBaudRate*/
+            bParamAddr = 0x02;
+            //bValue = 26;   //RF = 26
+
+            bValue = (byte)01;
+
+            if (CFHidApi.CFHid_SetDeviceOneParam(0xFF, bParamAddr, bValue) == false)
+            {
+                this.SetText("Faild");
+                return;
+            }
+            this.SetText("Success");
         }
     }
 }
