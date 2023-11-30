@@ -8,6 +8,8 @@ namespace Tesis_RFID_Integration
 {
     public partial class Form1 : Form
     {
+        private Dictionary<string, DateTime> ultimaLecturaPorEPC = new();
+
         public Form1()
         {
             InitializeComponent();
@@ -226,22 +228,27 @@ namespace Tesis_RFID_Integration
 
 
             bRet = CFHidApi.CFHid_GetTagBuf(arrBuffer, out int iTotalLen, out int iNum);
+
             if (bRet == 1)
             {
                 SetText("DevOut");
                 return; //DevOut
             }
             else if (bRet == 0) return; //No Connect
+
             int iTagLength = 0;
             int iTagNumber = 0;
             iTagLength = iTotalLen;
             iTagNumber = iNum;
+
             if (iTagNumber == 0) return;
+
             //int iIndex = 0;
             int iLength = 0;
             byte bPackLength;
             int i;
             int iIDLen;
+
             for (int iIndex = 0; iIndex < iTagNumber; iIndex++)
             {
                 
@@ -297,6 +304,23 @@ namespace Tesis_RFID_Integration
                     //RSSI = arrBuffer[1 + iLength + i].ToString("X2")
                     RSSI = rssi,
                 };
+
+                // Comprobación y acción basada en el EPC
+                if (!ultimaLecturaPorEPC.TryGetValue(epc, out DateTime ultimaLectura) ||
+                    (DateTime.Now - ultimaLectura).TotalSeconds > 5)
+                {
+                    // Realizar acción aquí para EPC no leído en los últimos 5 segundos
+                    updateEPCLocation(epc); // Reemplaza esto con tu acción o función real
+
+                    // Actualizar el diccionario
+                    ultimaLecturaPorEPC[epc] = DateTime.Now;
+                }
+
+
+                // 
+                // Comentario EXTRA (usar columna isOut? para verificar la salida en casos de solo 1 antena)
+                //
+
 
                 lecturas.Add( lectura );
 
@@ -421,6 +445,11 @@ namespace Tesis_RFID_Integration
         //    //}
         //}
 
+        private void updateEPCLocation (string EPC)
+        {
+            System.Diagnostics.Debug.WriteLine("updateEPCLocation: {0}", EPC);
+        }
+        
         private void btnReadOnce_Click(object sender, EventArgs e)
         {
             byte[] arrBuffer = new byte[64000];
