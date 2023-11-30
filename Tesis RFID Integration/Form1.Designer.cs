@@ -43,12 +43,18 @@
             btnStartRead = new Button();
             timer1 = new System.Windows.Forms.Timer(components);
             groupBox1 = new GroupBox();
+            button3 = new Button();
             button2 = new Button();
             button1 = new Button();
-            button3 = new Button();
+            comboBox1 = new ComboBox();
+            grpBoxConfiguration = new GroupBox();
+            lblReadingInWarehouse = new Label();
+            lblWarehouseSetted = new Label();
+            btnUpdateSettings = new Button();
             grpBoxConnection.SuspendLayout();
             grpBoxLecturas.SuspendLayout();
             groupBox1.SuspendLayout();
+            grpBoxConfiguration.SuspendLayout();
             SuspendLayout();
             // 
             // btnScanUSB
@@ -119,7 +125,7 @@
             grpBoxLecturas.Controls.Add(btnReadOnce);
             grpBoxLecturas.Controls.Add(btnStopRead);
             grpBoxLecturas.Controls.Add(btnStartRead);
-            grpBoxLecturas.Location = new Point(218, 12);
+            grpBoxLecturas.Location = new Point(218, 140);
             grpBoxLecturas.Name = "grpBoxLecturas";
             grpBoxLecturas.Size = new Size(322, 149);
             grpBoxLecturas.TabIndex = 4;
@@ -190,6 +196,16 @@
             groupBox1.TabStop = false;
             groupBox1.Text = "Pruebas";
             // 
+            // button3
+            // 
+            button3.Location = new Point(6, 80);
+            button3.Name = "button3";
+            button3.Size = new Size(112, 23);
+            button3.TabIndex = 2;
+            button3.Text = "Set Active Mode";
+            button3.UseVisualStyleBackColor = true;
+            button3.Click += button3_Click;
+            // 
             // button2
             // 
             button2.Location = new Point(6, 51);
@@ -210,21 +226,60 @@
             button1.UseVisualStyleBackColor = true;
             button1.Click += button1_Click;
             // 
-            // button3
+            // comboBox1
             // 
-            button3.Location = new Point(6, 80);
-            button3.Name = "button3";
-            button3.Size = new Size(112, 23);
-            button3.TabIndex = 2;
-            button3.Text = "Set Active Mode";
-            button3.UseVisualStyleBackColor = true;
-            button3.Click += button3_Click;
+            comboBox1.FormattingEnabled = true;
+            comboBox1.Location = new Point(6, 51);
+            comboBox1.Name = "comboBox1";
+            comboBox1.Size = new Size(120, 23);
+            comboBox1.TabIndex = 5;
+            // 
+            // grpBoxConfiguration
+            // 
+            grpBoxConfiguration.Controls.Add(btnUpdateSettings);
+            grpBoxConfiguration.Controls.Add(comboBox1);
+            grpBoxConfiguration.Controls.Add(lblWarehouseSetted);
+            grpBoxConfiguration.Controls.Add(lblReadingInWarehouse);
+            grpBoxConfiguration.Location = new Point(218, 12);
+            grpBoxConfiguration.Name = "grpBoxConfiguration";
+            grpBoxConfiguration.Size = new Size(322, 122);
+            grpBoxConfiguration.TabIndex = 6;
+            grpBoxConfiguration.TabStop = false;
+            grpBoxConfiguration.Text = "Configuración";
+            // 
+            // lblReadingInWarehouse
+            // 
+            lblReadingInWarehouse.AutoSize = true;
+            lblReadingInWarehouse.Location = new Point(6, 25);
+            lblReadingInWarehouse.Name = "lblReadingInWarehouse";
+            lblReadingInWarehouse.Size = new Size(114, 15);
+            lblReadingInWarehouse.TabIndex = 0;
+            lblReadingInWarehouse.Text = "Leyendo en Bodega:";
+            // 
+            // lblWarehouseSetted
+            // 
+            lblWarehouseSetted.AutoSize = true;
+            lblWarehouseSetted.Location = new Point(147, 25);
+            lblWarehouseSetted.Name = "lblWarehouseSetted";
+            lblWarehouseSetted.Size = new Size(85, 15);
+            lblWarehouseSetted.TabIndex = 1;
+            lblWarehouseSetted.Text = "Sin Determinar";
+            // 
+            // btnUpdateSettings
+            // 
+            btnUpdateSettings.Location = new Point(147, 51);
+            btnUpdateSettings.Name = "btnUpdateSettings";
+            btnUpdateSettings.Size = new Size(85, 23);
+            btnUpdateSettings.TabIndex = 6;
+            btnUpdateSettings.Text = "Actualizar";
+            btnUpdateSettings.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(552, 450);
+            Controls.Add(grpBoxConfiguration);
             Controls.Add(groupBox1);
             Controls.Add(grpBoxLecturas);
             Controls.Add(textBox1);
@@ -236,6 +291,8 @@
             grpBoxLecturas.ResumeLayout(false);
             grpBoxLecturas.PerformLayout();
             groupBox1.ResumeLayout(false);
+            grpBoxConfiguration.ResumeLayout(false);
+            grpBoxConfiguration.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -259,5 +316,10 @@
         private Button button1;
         private Button button2;
         private Button button3;
+        private ComboBox comboBox1;
+        private GroupBox grpBoxConfiguration;
+        private Button btnUpdateSettings;
+        private Label lblWarehouseSetted;
+        private Label lblReadingInWarehouse;
     }
 }

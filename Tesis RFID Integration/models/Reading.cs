@@ -15,5 +15,7 @@ namespace Tesis_RFID_Integration.models
         public string Antenna { get; set; }
         public string EPC { get; set; }
         public string RSSI { get; set; }
+        public int Warehouse { get; set;}
+        public DateTime LastAPICalled { get; set; }
     }
 }
