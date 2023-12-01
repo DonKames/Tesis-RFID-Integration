@@ -46,11 +46,12 @@
             button3 = new Button();
             button2 = new Button();
             button1 = new Button();
-            comboBox1 = new ComboBox();
+            cboBoxBranches = new ComboBox();
             grpBoxConfiguration = new GroupBox();
-            lblReadingInWarehouse = new Label();
-            lblWarehouseSetted = new Label();
             btnUpdateSettings = new Button();
+            lblWarehouseSetted = new Label();
+            lblReadingInWarehouse = new Label();
+            cboBoxWarehouses = new ComboBox();
             grpBoxConnection.SuspendLayout();
             grpBoxLecturas.SuspendLayout();
             groupBox1.SuspendLayout();
@@ -125,9 +126,9 @@
             grpBoxLecturas.Controls.Add(btnReadOnce);
             grpBoxLecturas.Controls.Add(btnStopRead);
             grpBoxLecturas.Controls.Add(btnStartRead);
-            grpBoxLecturas.Location = new Point(218, 140);
+            grpBoxLecturas.Location = new Point(218, 167);
             grpBoxLecturas.Name = "grpBoxLecturas";
-            grpBoxLecturas.Size = new Size(322, 149);
+            grpBoxLecturas.Size = new Size(322, 122);
             grpBoxLecturas.TabIndex = 4;
             grpBoxLecturas.TabStop = false;
             grpBoxLecturas.Text = "Lecturas";
@@ -226,35 +227,36 @@
             button1.UseVisualStyleBackColor = true;
             button1.Click += button1_Click;
             // 
-            // comboBox1
+            // cboBoxBranches
             // 
-            comboBox1.FormattingEnabled = true;
-            comboBox1.Location = new Point(6, 51);
-            comboBox1.Name = "comboBox1";
-            comboBox1.Size = new Size(120, 23);
-            comboBox1.TabIndex = 5;
+            cboBoxBranches.FormattingEnabled = true;
+            cboBoxBranches.Location = new Point(6, 51);
+            cboBoxBranches.Name = "cboBoxBranches";
+            cboBoxBranches.Size = new Size(120, 23);
+            cboBoxBranches.TabIndex = 5;
             // 
             // grpBoxConfiguration
             // 
+            grpBoxConfiguration.Controls.Add(cboBoxWarehouses);
             grpBoxConfiguration.Controls.Add(btnUpdateSettings);
-            grpBoxConfiguration.Controls.Add(comboBox1);
+            grpBoxConfiguration.Controls.Add(cboBoxBranches);
             grpBoxConfiguration.Controls.Add(lblWarehouseSetted);
             grpBoxConfiguration.Controls.Add(lblReadingInWarehouse);
             grpBoxConfiguration.Location = new Point(218, 12);
             grpBoxConfiguration.Name = "grpBoxConfiguration";
-            grpBoxConfiguration.Size = new Size(322, 122);
+            grpBoxConfiguration.Size = new Size(322, 149);
             grpBoxConfiguration.TabIndex = 6;
             grpBoxConfiguration.TabStop = false;
             grpBoxConfiguration.Text = "Configuración";
             // 
-            // lblReadingInWarehouse
+            // btnUpdateSettings
             // 
-            lblReadingInWarehouse.AutoSize = true;
-            lblReadingInWarehouse.Location = new Point(6, 25);
-            lblReadingInWarehouse.Name = "lblReadingInWarehouse";
-            lblReadingInWarehouse.Size = new Size(114, 15);
-            lblReadingInWarehouse.TabIndex = 0;
-            lblReadingInWarehouse.Text = "Leyendo en Bodega:";
+            btnUpdateSettings.Location = new Point(147, 120);
+            btnUpdateSettings.Name = "btnUpdateSettings";
+            btnUpdateSettings.Size = new Size(85, 23);
+            btnUpdateSettings.TabIndex = 6;
+            btnUpdateSettings.Text = "Actualizar";
+            btnUpdateSettings.UseVisualStyleBackColor = true;
             // 
             // lblWarehouseSetted
             // 
@@ -265,14 +267,22 @@
             lblWarehouseSetted.TabIndex = 1;
             lblWarehouseSetted.Text = "Sin Determinar";
             // 
-            // btnUpdateSettings
+            // lblReadingInWarehouse
             // 
-            btnUpdateSettings.Location = new Point(147, 51);
-            btnUpdateSettings.Name = "btnUpdateSettings";
-            btnUpdateSettings.Size = new Size(85, 23);
-            btnUpdateSettings.TabIndex = 6;
-            btnUpdateSettings.Text = "Actualizar";
-            btnUpdateSettings.UseVisualStyleBackColor = true;
+            lblReadingInWarehouse.AutoSize = true;
+            lblReadingInWarehouse.Location = new Point(6, 25);
+            lblReadingInWarehouse.Name = "lblReadingInWarehouse";
+            lblReadingInWarehouse.Size = new Size(114, 15);
+            lblReadingInWarehouse.TabIndex = 0;
+            lblReadingInWarehouse.Text = "Leyendo en Bodega:";
+            // 
+            // cboBoxWarehouses
+            // 
+            cboBoxWarehouses.FormattingEnabled = true;
+            cboBoxWarehouses.Location = new Point(6, 81);
+            cboBoxWarehouses.Name = "cboBoxWarehouses";
+            cboBoxWarehouses.Size = new Size(120, 23);
+            cboBoxWarehouses.TabIndex = 7;
             // 
             // Form1
             // 
@@ -316,10 +326,11 @@
         private Button button1;
         private Button button2;
         private Button button3;
-        private ComboBox comboBox1;
+        private ComboBox cboBoxBranches;
         private GroupBox grpBoxConfiguration;
         private Button btnUpdateSettings;
         private Label lblWarehouseSetted;
         private Label lblReadingInWarehouse;
+        private ComboBox cboBoxWarehouses;
     }
 }

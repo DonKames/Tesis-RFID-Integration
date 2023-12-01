@@ -2,6 +2,7 @@
 using System;
 using System.Reflection;
 using System.Text;
+using Tesis_RFID_Integration.api;
 using Tesis_RFID_Integration.models;
 
 namespace Tesis_RFID_Integration
@@ -9,6 +10,8 @@ namespace Tesis_RFID_Integration
     public partial class Form1 : Form
     {
         private Dictionary<string, Reading> readingsInfo = new();
+        private WarehouseAPI warehouseAPI;
+        private BranchAPI branchAPI;
 
         public Form1()
         {
@@ -18,6 +21,12 @@ namespace Tesis_RFID_Integration
 
             //Console.WriteLine("inicio");
             System.Diagnostics.Debug.WriteLine("inicio");
+
+            warehouseAPI = new WarehouseAPI();
+            branchAPI = new BranchAPI();
+
+            InitializeCboBoxes();
+
 
 
             string strSN = "";
@@ -37,6 +46,55 @@ namespace Tesis_RFID_Integration
             }
             if (iHidNumber > 0)
                 cboBoxUSB.SelectedIndex = 0;
+        }
+
+        private void InitializeCboBoxes()
+        {
+            InitializeCboBoxWarehouses();
+            InitializeCboBoxBranches();
+        }
+
+        private async void InitializeCboBoxWarehouses()
+        {
+            try
+            {
+
+                var warehouses = await warehouseAPI.GetWarehousesNamesAsync();
+
+                if (warehouses != null)
+                {
+                    foreach (var warehouse in warehouses)
+                    {
+                        cboBoxWarehouses.Items.Add(warehouse.Name);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Manejar excepciones aquí
+                MessageBox.Show("Error al obtener nombres de almacenes: " + ex.Message);
+            }
+        }
+        private async void InitializeCboBoxBranches()
+        {
+            try
+            {
+
+                var warehouses = await branchAPI.GetBranchNamesAsync();
+
+                if (warehouses != null)
+                {
+                    foreach (var warehouse in warehouses)
+                    {
+                        cboBoxWarehouses.Items.Add(warehouse.Name);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Manejar excepciones aquí
+                MessageBox.Show("Error al obtener nombres de almacenes: " + ex.Message);
+            }
         }
 
         private void btnScanUSB_Click(object sender, EventArgs e)
@@ -307,7 +365,7 @@ namespace Tesis_RFID_Integration
 
                 // Comprobación y acción basada en el EPC
                 if (!readingsInfo.TryGetValue(epc, out Reading ultimaLectura) &&
-                    (DateTime.Now - ultimaLectura?.LastAPICalled)?.TotalSeconds > 5 &&
+                    (DateTime.Now - ultimaLectura?.LastAPICalled)?.TotalSeconds > 5
                     )
                 {
                     // Realizar acción aquí para EPC no leído en los últimos 5 segundos
