@@ -6,15 +6,12 @@ using System.Threading.Tasks;
 
 namespace Tesis_RFID_Integration.models
 {
-    internal class Warehouse
+    internal class Product
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public int BranchId { get; set; }
-
-        public override string ToString()
-        {
-            return this.Name;
-        }
+        public string EPC { get; set; }
+        public int WarehouseId{ get; set; }
+        public int SkuId{ get; set; }
+        public bool Active{ get; set; }
     }
 }

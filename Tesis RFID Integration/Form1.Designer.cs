@@ -48,10 +48,10 @@
             button1 = new Button();
             cboBoxBranches = new ComboBox();
             grpBoxConfiguration = new GroupBox();
+            cboBoxWarehouses = new ComboBox();
             btnUpdateSettings = new Button();
             lblWarehouseSetted = new Label();
             lblReadingInWarehouse = new Label();
-            cboBoxWarehouses = new ComboBox();
             grpBoxConnection.SuspendLayout();
             grpBoxLecturas.SuspendLayout();
             groupBox1.SuspendLayout();
@@ -234,6 +234,7 @@
             cboBoxBranches.Name = "cboBoxBranches";
             cboBoxBranches.Size = new Size(120, 23);
             cboBoxBranches.TabIndex = 5;
+            cboBoxBranches.SelectedValueChanged += cboBoxBranches_SelectedValueChanged;
             // 
             // grpBoxConfiguration
             // 
@@ -249,6 +250,14 @@
             grpBoxConfiguration.TabStop = false;
             grpBoxConfiguration.Text = "Configuración";
             // 
+            // cboBoxWarehouses
+            // 
+            cboBoxWarehouses.FormattingEnabled = true;
+            cboBoxWarehouses.Location = new Point(6, 81);
+            cboBoxWarehouses.Name = "cboBoxWarehouses";
+            cboBoxWarehouses.Size = new Size(120, 23);
+            cboBoxWarehouses.TabIndex = 7;
+            // 
             // btnUpdateSettings
             // 
             btnUpdateSettings.Location = new Point(147, 120);
@@ -257,6 +266,7 @@
             btnUpdateSettings.TabIndex = 6;
             btnUpdateSettings.Text = "Actualizar";
             btnUpdateSettings.UseVisualStyleBackColor = true;
+            btnUpdateSettings.Click += btnUpdateSettings_Click;
             // 
             // lblWarehouseSetted
             // 
@@ -275,14 +285,6 @@
             lblReadingInWarehouse.Size = new Size(114, 15);
             lblReadingInWarehouse.TabIndex = 0;
             lblReadingInWarehouse.Text = "Leyendo en Bodega:";
-            // 
-            // cboBoxWarehouses
-            // 
-            cboBoxWarehouses.FormattingEnabled = true;
-            cboBoxWarehouses.Location = new Point(6, 81);
-            cboBoxWarehouses.Name = "cboBoxWarehouses";
-            cboBoxWarehouses.Size = new Size(120, 23);
-            cboBoxWarehouses.TabIndex = 7;
             // 
             // Form1
             // 

@@ -8,28 +8,28 @@ using Tesis_RFID_Integration.models;
 
 namespace Tesis_RFID_Integration.api
 {
-    internal class BranchAPI
+    internal class ProductAPI
     {
         private readonly HttpClient _httpClient;
 
-        public BranchAPI()
+        public ProductAPI()
         {
             _httpClient = new HttpClient();
             // Configura aquí la URL base si es constante
             _httpClient.BaseAddress = new Uri("http://localhost:3000/api/");
         }
 
-        public async Task<List<Branch>> GetBranchNamesAsync()
+        public async Task<List<Product>> GetProductByEPCAsync(string EPC)
         {
             try
             {
-                var response = await _httpClient.GetAsync("branches/names");
+                var response = await _httpClient.GetAsync("products/epc/:epc");
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
-                var branches = JsonConvert.DeserializeObject<List<Branch>>(content);
+                var products = JsonConvert.DeserializeObject<List<Product>>(content);
 
-                return branches;
+                return products;
             }
             catch (HttpRequestException e)
             {

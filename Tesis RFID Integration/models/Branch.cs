@@ -7,9 +7,13 @@ using System.Threading.Tasks;
 
 namespace Tesis_RFID_Integration.models
 {
-    internal class Branches
+    internal class Branch
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public override string ToString()
+        {
+            return this.Name;
+        }
     }
 }

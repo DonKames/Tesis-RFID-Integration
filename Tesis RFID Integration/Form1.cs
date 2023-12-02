@@ -13,6 +13,11 @@ namespace Tesis_RFID_Integration
         private WarehouseAPI warehouseAPI;
         private BranchAPI branchAPI;
 
+        List<Branch> branchesNames;
+        List<Warehouse> warehousesNames;
+
+        Warehouse selectedWarehouse;
+
         public Form1()
         {
             InitializeComponent();
@@ -50,22 +55,24 @@ namespace Tesis_RFID_Integration
 
         private void InitializeCboBoxes()
         {
-            InitializeCboBoxWarehouses();
             InitializeCboBoxBranches();
+            InitializeCboBoxWarehouses();
         }
 
-        private async void InitializeCboBoxWarehouses()
+        private async void InitializeCboBoxBranches()
         {
             try
             {
 
-                var warehouses = await warehouseAPI.GetWarehousesNamesAsync();
+                //var branches = await branchAPI.GetBranchNamesAsync();
+                branchesNames = await branchAPI.GetBranchNamesAsync();
 
-                if (warehouses != null)
+
+                if (branchesNames != null)
                 {
-                    foreach (var warehouse in warehouses)
+                    foreach (var branch in branchesNames)
                     {
-                        cboBoxWarehouses.Items.Add(warehouse.Name);
+                        cboBoxBranches.Items.Add(branch);
                     }
                 }
             }
@@ -75,20 +82,13 @@ namespace Tesis_RFID_Integration
                 MessageBox.Show("Error al obtener nombres de almacenes: " + ex.Message);
             }
         }
-        private async void InitializeCboBoxBranches()
+        private async void InitializeCboBoxWarehouses()
         {
             try
             {
 
-                var warehouses = await branchAPI.GetBranchNamesAsync();
+                warehousesNames = await warehouseAPI.GetWarehousesNamesAsync();
 
-                if (warehouses != null)
-                {
-                    foreach (var warehouse in warehouses)
-                    {
-                        cboBoxWarehouses.Items.Add(warehouse.Name);
-                    }
-                }
             }
             catch (Exception ex)
             {
@@ -363,17 +363,43 @@ namespace Tesis_RFID_Integration
                     RSSI = rssi,
                 };
 
-                // Comprobación y acción basada en el EPC
-                if (!readingsInfo.TryGetValue(epc, out Reading ultimaLectura) &&
-                    (DateTime.Now - ultimaLectura?.LastAPICalled)?.TotalSeconds > 5
-                    )
-                {
-                    // Realizar acción aquí para EPC no leído en los últimos 5 segundos
-                    updateEPCLocation(epc); // Reemplaza esto con tu acción o función real
 
-                    // Actualizar el diccionario
-                    readingsInfo[epc].LastAPICalled = DateTime.Now;
+                // Logica de actualizacion
+
+                
+                if (readingsInfo.TryGetValue(epc, out Reading readingByEPC))
+                {
+                    System.Diagnostics.Debug.WriteLine("El dictionary tiene el EPC");
+                    
                 }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Se agrega al Dictionary");
+
+                    updateEPCLocation(epc, selectedWarehouse.Id);
+
+                    readingsInfo.Add(epc, lectura);
+
+                }
+                
+
+                //// Comprobación y acción basada en el EPC
+                //if (!readingsInfo.TryGetValue(epc, out Reading ultimaLectura) &&
+                //    (DateTime.Now - ultimaLectura?.LastAPICalled)?.TotalSeconds > 5
+                //    )
+                //{
+                //    System.Diagnostics.Debug.WriteLine("Entra al primer IF");
+                //    if (ultimaLectura?.Warehouse != selectedWarehouse.Id)
+                //    {
+                //        readingsInfo[epc].Warehouse = selectedWarehouse.Id;
+
+                //        // Realizar acción aquí para EPC no leído en los últimos 5 segundos
+                //        updateEPCLocation(epc, selectedWarehouse.Id);
+                //    }
+
+                //    // Actualizar el diccionario
+                //    readingsInfo[epc].LastAPICalled = DateTime.Now;
+                //}
 
 
                 // 
@@ -504,9 +530,9 @@ namespace Tesis_RFID_Integration
         //    //}
         //}
 
-        private void updateEPCLocation(string EPC)
+        private void updateEPCLocation(string EPC, int warehouseId)
         {
-            System.Diagnostics.Debug.WriteLine("updateEPCLocation: {0}", EPC);
+            System.Diagnostics.Debug.WriteLine("updateEPCLocation: {0}, warehouseId: {1}", EPC, warehouseId);
         }
 
         private void btnReadOnce_Click(object sender, EventArgs e)
@@ -633,6 +659,29 @@ namespace Tesis_RFID_Integration
                 return;
             }
             this.SetText("Success");
+        }
+
+        private void cboBoxBranches_SelectedValueChanged(object sender, EventArgs e)
+        {
+            cboBoxWarehouses.Items.Clear();
+
+            Branch selectedBranch = (Branch)cboBoxBranches.SelectedItem;
+            //System.Diagnostics.Debug.WriteLine("Cambio la sucursal - Nombre:{0} - ID:{1}", selectedBranch.Name, selectedBranch.Id);
+
+            //System.Diagnostics.Debug.WriteLine("modelo bodega - nombre: {0}, branchId: {1}, id: {2}", warehousesNames[0].Name, warehousesNames[0].BranchId, warehousesNames[0].Id);
+
+            List<Warehouse> cboBoxOptionsWarehouses = warehousesNames.FindAll(w => w.BranchId == selectedBranch.Id);
+
+            foreach (Warehouse w in cboBoxOptionsWarehouses)
+            {
+                cboBoxWarehouses.Items.Add(w);
+            }
+        }
+
+        private void btnUpdateSettings_Click(object sender, EventArgs e)
+        {
+            Warehouse warehouse = (Warehouse)cboBoxWarehouses.SelectedItem;
+            lblWarehouseSetted.Text = "ID: " + warehouse.Id + " - " + warehouse.Name;
         }
     }
 }
