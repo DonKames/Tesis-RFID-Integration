@@ -12,6 +12,7 @@ namespace Tesis_RFID_Integration
         private Dictionary<string, Reading> readingsInfo = new();
         private WarehouseAPI warehouseAPI;
         private BranchAPI branchAPI;
+        private ProductAPI productAPI;
 
         List<Branch> branchesNames;
         List<Warehouse> warehousesNames;
@@ -27,11 +28,17 @@ namespace Tesis_RFID_Integration
             //Console.WriteLine("inicio");
             System.Diagnostics.Debug.WriteLine("inicio");
 
+            // Inicializacion de APIs
             warehouseAPI = new WarehouseAPI();
             branchAPI = new BranchAPI();
+            productAPI = new ProductAPI();
 
             InitializeCboBoxes();
 
+            // Desactivacion Botones
+            btnReadOnce.Enabled = false;
+            btnStartRead.Enabled = false;
+            btnStopRead.Enabled = false;
 
 
             string strSN = "";
@@ -97,6 +104,23 @@ namespace Tesis_RFID_Integration
             }
         }
 
+        private async Task<Product> GetProductByEPC(string EPC)
+        {
+            try
+            {
+
+                Product productByEPC = await productAPI.GetProductByEPCAsync(EPC);
+
+                return productByEPC;
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al obtener el EPC: " + ex.Message);
+                return null;
+            }
+        }
+
         private void btnScanUSB_Click(object sender, EventArgs e)
         {
             string strSN = "";
@@ -145,10 +169,15 @@ namespace Tesis_RFID_Integration
                     //    System.Diagnostics.Debug.WriteLine("resp deviceSystemInfo", resp.ToString());
                     SetText("Conección Exitosa\r\n");
                     btnConnect.Text = "Desconectar";
+                    btnReadOnce.Enabled = true;
+                    btnStartRead.Enabled = true;
+                    btnStopRead.Enabled = true;
+                    lblConnectionStatus.Text = "Conectado";
+                    lblConnectionStatus.ForeColor = System.Drawing.Color.Green;
                 }
                 else
                 {
-                    this.SetText("Conexión Fallida\r\n");
+                    SetText("Conexión Fallida\r\n");
                     return;
                 }
                 //System.Diagnostics.Debug.WriteLine("Entra al IF");
@@ -180,6 +209,11 @@ namespace Tesis_RFID_Integration
                 //button11.Enabled = false;
                 this.SetText("Conección finalizada\r\n");
                 btnConnect.Text = "Conectar";
+                btnReadOnce.Enabled = false;
+                btnStartRead.Enabled = false;
+                btnStopRead.Enabled = false;
+                lblConnectionStatus.Text = "Desconectado";
+                lblConnectionStatus.ForeColor = System.Drawing.Color.Red;
             }
 
 
@@ -277,12 +311,11 @@ namespace Tesis_RFID_Integration
         }
 
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private async void timer1_Tick(object sender, EventArgs e)
         {
 
             byte[] arrBuffer = new byte[64000];
             byte bRet;
-            List<Reading> lecturas = new List<Reading>();
 
 
             bRet = CFHidApi.CFHid_GetTagBuf(arrBuffer, out int iTotalLen, out int iNum);
@@ -336,7 +369,9 @@ namespace Tesis_RFID_Integration
                 for (i = 2; i < iIDLen; i++)
                 {
                     str1 = arrBuffer[1 + iLength + i].ToString("X2");
-                    str3 = str3 + str1 + " ";
+                    str3 = str3 + str1;
+                    //str3 = str3 + str1 + " ";
+
                 }
 
                 // EPC
@@ -351,37 +386,89 @@ namespace Tesis_RFID_Integration
                 str2 = str2 + "RSSI:" + str1 + "\r\n";  //RSSI
                 iLength = iLength + bPackLength + 1;
 
-                Reading lectura = new Reading
-                {
-                    //Type = arrBuffer[1 + iLength + 0].ToString("X2"),
-                    Type = type,
-                    //Antenna = arrBuffer[1 + iLength + 1].ToString("X2"),
-                    Antenna = antenna,
-                    //Tag = "", // Aquí debes agregar la representación adecuada del Tag
-                    EPC = epc,
-                    //RSSI = arrBuffer[1 + iLength + i].ToString("X2")
-                    RSSI = rssi,
-                };
+
 
 
                 // Logica de actualizacion
-
-                
-                if (readingsInfo.TryGetValue(epc, out Reading readingByEPC))
+                // Si la lectura ya esta en el Dictionary
+                if (!readingsInfo.TryGetValue(epc, out Reading lastReadingByEPC))
                 {
-                    System.Diagnostics.Debug.WriteLine("El dictionary tiene el EPC");
-                    
+                    Reading reading = new Reading
+                    {
+                        //Type = arrBuffer[1 + iLength + 0].ToString("X2"),
+                        Type = type,
+                        //Antenna = arrBuffer[1 + iLength + 1].ToString("X2"),
+                        Antenna = antenna,
+                        //Tag = "", // Aquí debes agregar la representación adecuada del Tag
+                        EPC = epc,
+                        //RSSI = arrBuffer[1 + iLength + i].ToString("X2")
+                        RSSI = rssi,
+                    };
+
+                    System.Diagnostics.Debug.WriteLine("Arriba de updateEPCLocation");
+
+                    string EPCWithoutSpace = epc.Replace(" ", "");
+
+                    Product product = await GetProductByEPC(EPCWithoutSpace);
+
+                    // Verificar si la bodega del producto es la misma de la antena
+                    if (product != null && product.WarehouseId != selectedWarehouse.Id)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Bodegas de producto y antena, distintas.");
+
+                        UpdateEPCLocation(epc, selectedWarehouse.Id);
+
+                        reading.Warehouse = selectedWarehouse.Id;
+                    }
+
+
+                    reading.LastAPICalled = DateTime.Now;
+
+
+                    readingsInfo.Add(epc, reading);
+
+
+                    System.Diagnostics.Debug.WriteLine("Se agrega al Dictionary");
                 }
+                // Si la lectura no esta en el dictionary
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("Se agrega al Dictionary");
+                    System.Diagnostics.Debug.WriteLine("El dictionary tiene el EPC");
 
-                    updateEPCLocation(epc, selectedWarehouse.Id);
+                    if (lastReadingByEPC.Warehouse == null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"EPC sin bodega{lastReadingByEPC.EPC}");
 
-                    readingsInfo.Add(epc, lectura);
+                        Product product = await productAPI.GetProductByEPCAsync(epc);
+                        lastReadingByEPC.Warehouse = product.Id;
+                    }
 
+                    //if (lastReadingByEPC.Warehouse != selectedWarehouse.Id)
+                    //{
+
+                    //    System.Diagnostics.Debug.WriteLine("Se actualizara la bodega");
+
+                    //    try {
+                    //        UpdateEPCLocation(epc, selectedWarehouse.Id);
+
+                    //        lastReadingByEPC.LastAPICalled = DateTime.Now;
+                    //        System.Diagnostics.Debug.WriteLine($"UpdateEPCLocation, actualizado");
+
+                    //    }
+                    //    catch (Exception ex) {
+                    //        System.Diagnostics.Debug.WriteLine($"{ex.Message}");
+                    //    }
+                    //}
+
+                    //// Verificar si pasaron mas de 5 segundos desde la ultima lectura.
+                    //if ((DateTime.Now - lastReadingByEPC.LastAPICalled).TotalSeconds > 5)
+                    //{
+                    //    System.Diagnostics.Debug.WriteLine("Pasaron mas de 5 segundos desde la ultima lectura.");
+
+                    //    lastReadingByEPC.LastAPICalled = DateTime.Now;
+                    //}
                 }
-                
+
 
                 //// Comprobación y acción basada en el EPC
                 //if (!readingsInfo.TryGetValue(epc, out Reading ultimaLectura) &&
@@ -407,132 +494,28 @@ namespace Tesis_RFID_Integration
                 //
 
 
-                lecturas.Add(lectura);
 
                 SetText(str2);
             }
 
-            foreach (var lectura in lecturas)
-            {
-                string output = $"Type: {lectura.Type}, Antenna: {lectura.Antenna}, Tag: {lectura.EPC}, RSSI: {lectura.RSSI}";
-                System.Diagnostics.Debug.WriteLine(output);
-            }
+            //foreach (var lectura in lecturas)
+            //{
+            //    string output = $"Type: {lectura.Type}, Antenna: {lectura.Antenna}, Tag: {lectura.EPC}, RSSI: {lectura.RSSI}";
+            //    System.Diagnostics.Debug.WriteLine(output);
+            //}
         }
 
-        // FUNCANDO
-        //{
-        //    byte[] arrBuffer = new byte[64000];  // Tamaño del buffer según tu necesidad
-        //    //int totalLength;
-        //    //int tagNumber;
 
-        //    byte result = CFHidApi.CFHid_GetTagBuf(arrBuffer, out int totalLength, out int tagNumber);
-
-        //    System.Diagnostics.Debug.WriteLine(result);
-
-        //    System.Diagnostics.Debug.WriteLine(result.ToString("X2"));
-
-        //    if (result == 2)
-        //    {
-        //        System.Diagnostics.Debug.WriteLine("Positivo: TotalLength={0}, TagNumber={1}", totalLength, tagNumber);
-
-        //        if (tagNumber == 0) return;
-
-        //        int iLength = 0;
-
-        //        for (int i = 0; i < tagNumber; i++)
-        //        {
-        //            byte bPackLength = arrBuffer[iLength];
-        //            int iIDLen;
-        //            bool hasTimestamp = (arrBuffer[1 + iLength] & 0x80) == 0x80;
-
-        //            System.Diagnostics.Debug.WriteLine("bpackLength: {0}", bPackLength);
-
-        //            // Tipo de Tag
-        //            string tagType = arrBuffer[1 + iLength].ToString("X2");
-
-        //            // Verificación de Timestamp
-        //            if ((arrBuffer[1 + iLength] & 0x80) == 0x80)
-        //            {
-        //                iIDLen = bPackLength - 7;
-        //            }
-        //            else
-        //            {
-        //                iIDLen = bPackLength - 1;
-        //            }
-
-        //            // Número de Antena
-        //            string antNumber = arrBuffer[2 + iLength].ToString("X2");
-
-        //            // ID del Tag
-        //            string tagID = "";
-        //            for (int j = 3; j < 3 + iIDLen; j++)
-        //            {
-        //                tagID += arrBuffer[iLength + j].ToString("X2") + " ";
-        //            }
-
-        //            string timestamp = "";
-
-        //            if (hasTimestamp)
-        //            {
-        //                System.Diagnostics.Debug.WriteLine("Tiene timestamp");
-        //                // Asumiendo que el Timestamp son los últimos 6 bytes del paquete
-        //                int timestampStartIndex = iLength + bPackLength - 6;
-        //                for (int j = timestampStartIndex; j < timestampStartIndex + 6; j++)
-        //                {
-        //                    timestamp += arrBuffer[j].ToString("X2") + " ";
-        //                }
-        //            }
-        //            else
-        //            {
-        //                System.Diagnostics.Debug.WriteLine("sin timestamp");
-
-        //            }
-
-        //            // RSSI
-        //            string rssi = arrBuffer[3 + iLength + iIDLen].ToString("X2");
-
-        //            // Impresión de la información del tag
-        //            System.Diagnostics.Debug.WriteLine("Tag {0}: Tipo={1}, Antena={2}, ID={3}, RSSI={4}, Timestamp={5}", i + 1, tagType, antNumber, tagID, rssi, timestamp);
-
-        //            // Actualizar índice para el siguiente tag
-        //            iLength += (bPackLength + 1);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        SetText("Fallo al recuperar buffer de tags.\r\n");
-        //        System.Diagnostics.Debug.WriteLine("Negativo: {0}, {1}", totalLength, tagNumber);
-        //    }
-
-
-
-
-        //    // MODO A LA MALA
-        //    //byte[] buffer = new byte[1024];
-        //    //ushort totalLength = 0;
-        //    //ushort cardNum = 0;
-        //    //if (CFHidApi.CFHid_InventoryG2(0xFF, buffer, out totalLength, out cardNum))
-        //    //{
-        //    //    if (cardNum > 0)
-        //    //    {
-        //    //        int index = 0;
-        //    //        for (int i = 0; i < cardNum; i++)
-        //    //        {
-        //    //            StringBuilder epc = new StringBuilder();
-        //    //            for (int j = 0; j < 12; j++) // Asumiendo que el EPC tiene 12 bytes
-        //    //            {
-        //    //                epc.AppendFormat("{0:X2} ", buffer[index + j]);
-        //    //            }
-        //    //            index += 12;
-        //    //            SetText("EPC: " + epc.ToString() + "\r\n");
-        //    //        }
-        //    //    }
-        //    //}
-        //}
-
-        private void updateEPCLocation(string EPC, int warehouseId)
+        private async void UpdateEPCLocation(string EPC, int warehouseId)
         {
-            System.Diagnostics.Debug.WriteLine("updateEPCLocation: {0}, warehouseId: {1}", EPC, warehouseId);
+
+            string EPCWithoutSpace = EPC.Replace(" ", "");
+
+            System.Diagnostics.Debug.WriteLine($"UpdateEPCLocation: {EPCWithoutSpace}");
+
+            Product respProduct = await productAPI.UpdateProductWarehouse(EPCWithoutSpace, warehouseId);
+
+            System.Diagnostics.Debug.WriteLine($"respProduct: {respProduct.EPC}, bodega: {respProduct.WarehouseId}");
         }
 
         private void btnReadOnce_Click(object sender, EventArgs e)
@@ -682,6 +665,7 @@ namespace Tesis_RFID_Integration
         {
             Warehouse warehouse = (Warehouse)cboBoxWarehouses.SelectedItem;
             lblWarehouseSetted.Text = "ID: " + warehouse.Id + " - " + warehouse.Name;
+            selectedWarehouse = warehouse;
         }
     }
 }

@@ -19,17 +19,53 @@ namespace Tesis_RFID_Integration.api
             _httpClient.BaseAddress = new Uri("http://localhost:3000/api/");
         }
 
-        public async Task<List<Product>> GetProductByEPCAsync(string EPC)
+        public async Task<Product> GetProductByEPCAsync(string EPC)
         {
             try
             {
-                var response = await _httpClient.GetAsync("products/epc/:epc");
+                var response = await _httpClient.GetAsync($"products/epc/{EPC}");
+
                 response.EnsureSuccessStatusCode();
 
                 var content = await response.Content.ReadAsStringAsync();
-                var products = JsonConvert.DeserializeObject<List<Product>>(content);
 
-                return products;
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<Product>>(content);
+
+                return apiResponse.Data;
+            }
+            catch (HttpRequestException e)
+            {
+                // Manejar aquí los errores de la solicitud
+                Console.WriteLine($"Error al realizar la solicitud: {e.Message}");
+                return null;
+            }
+        }
+
+        public async Task<Product> UpdateProductWarehouse(string epc, int warehouseId)
+        {
+            try
+            {
+                // Crea el objeto que representa el cuerpo de la solicitud
+                var requestBody = new { warehouseId };
+                var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
+
+                System.Diagnostics.Debug.WriteLine($"content: {content}");
+
+
+                // Realiza la solicitud PATCH
+                var response = await _httpClient.PatchAsync($"products/warehouse/{epc}", content);
+
+                System.Diagnostics.Debug.WriteLine($"response: {response}");
+
+                response.EnsureSuccessStatusCode();
+
+                // Deserializa y retorna el producto actualizado
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                System.Diagnostics.Debug.WriteLine($"responseBody: {responseBody}");
+
+                var apiResponse = JsonConvert.DeserializeObject<ApiResponse<Product>>(responseBody);
+                return apiResponse.Data;
             }
             catch (HttpRequestException e)
             {

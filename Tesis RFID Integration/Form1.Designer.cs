@@ -31,6 +31,8 @@
             components = new System.ComponentModel.Container();
             btnScanUSB = new Button();
             grpBoxConnection = new GroupBox();
+            lblConnectionStatus = new Label();
+            label2 = new Label();
             btnConnect = new Button();
             lblUSB = new Label();
             cboBoxUSB = new ComboBox();
@@ -72,6 +74,8 @@
             // grpBoxConnection
             // 
             grpBoxConnection.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            grpBoxConnection.Controls.Add(lblConnectionStatus);
+            grpBoxConnection.Controls.Add(label2);
             grpBoxConnection.Controls.Add(btnConnect);
             grpBoxConnection.Controls.Add(lblUSB);
             grpBoxConnection.Controls.Add(cboBoxUSB);
@@ -82,6 +86,25 @@
             grpBoxConnection.TabIndex = 2;
             grpBoxConnection.TabStop = false;
             grpBoxConnection.Text = "Conexión";
+            // 
+            // lblConnectionStatus
+            // 
+            lblConnectionStatus.AutoSize = true;
+            lblConnectionStatus.ForeColor = Color.Red;
+            lblConnectionStatus.Location = new Point(57, 106);
+            lblConnectionStatus.Name = "lblConnectionStatus";
+            lblConnectionStatus.Size = new Size(82, 15);
+            lblConnectionStatus.TabIndex = 4;
+            lblConnectionStatus.Text = "Desconectado";
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(6, 106);
+            label2.Name = "label2";
+            label2.Size = new Size(45, 15);
+            label2.TabIndex = 3;
+            label2.Text = "Estado:";
             // 
             // btnConnect
             // 
@@ -234,6 +257,7 @@
             cboBoxBranches.Name = "cboBoxBranches";
             cboBoxBranches.Size = new Size(120, 23);
             cboBoxBranches.TabIndex = 5;
+            cboBoxBranches.Text = "Sucursal";
             cboBoxBranches.SelectedValueChanged += cboBoxBranches_SelectedValueChanged;
             // 
             // grpBoxConfiguration
@@ -257,6 +281,7 @@
             cboBoxWarehouses.Name = "cboBoxWarehouses";
             cboBoxWarehouses.Size = new Size(120, 23);
             cboBoxWarehouses.TabIndex = 7;
+            cboBoxWarehouses.Text = "Bodega";
             // 
             // btnUpdateSettings
             // 
@@ -334,5 +359,7 @@
         private Label lblWarehouseSetted;
         private Label lblReadingInWarehouse;
         private ComboBox cboBoxWarehouses;
+        private Label lblConnectionStatus;
+        private Label label2;
     }
 }
