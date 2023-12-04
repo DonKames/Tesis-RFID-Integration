@@ -390,7 +390,7 @@ namespace Tesis_RFID_Integration
 
 
                 // Logica de actualizacion
-                // Si la lectura ya esta en el Dictionary
+                // Si la lectura NO esta en el Dictionary
                 if (!readingsInfo.TryGetValue(epc, out Reading lastReadingByEPC))
                 {
                     Reading reading = new Reading
@@ -411,82 +411,86 @@ namespace Tesis_RFID_Integration
 
                     Product product = await GetProductByEPC(EPCWithoutSpace);
 
-                    // Verificar si la bodega del producto es la misma de la antena
-                    if (product != null && product.WarehouseId != selectedWarehouse.Id)
+                    // Verificar si existe el epc en la bodega
+                    if (product != null)
                     {
-                        System.Diagnostics.Debug.WriteLine("Bodegas de producto y antena, distintas.");
-
-                        UpdateEPCLocation(epc, selectedWarehouse.Id);
+                        // Verificar si la bodega del producto es la misma de la antena
+                        if (product.WarehouseId != selectedWarehouse.Id)
+                        {
+                            System.Diagnostics.Debug.WriteLine("Bodegas de producto y antena, distintas.");
+                        
+                            System.Diagnostics.Debug.WriteLine($"reading selectedBodega: {selectedWarehouse.Id}");
+                            
+                            UpdateEPCLocation(epc, selectedWarehouse.Id);
+                        }
 
                         reading.Warehouse = selectedWarehouse.Id;
-                    }
 
+                        System.Diagnostics.Debug.WriteLine($"reading Bodega: {reading.Warehouse}");
+                    }
 
                     reading.LastAPICalled = DateTime.Now;
 
-
                     readingsInfo.Add(epc, reading);
 
-
                     System.Diagnostics.Debug.WriteLine("Se agrega al Dictionary");
+
+                    System.Diagnostics.Debug.WriteLine($"obteniendo el epc recien agregado: {readingsInfo.TryGetValue(epc, out Reading testing)}");
+                        
+                    System.Diagnostics.Debug.WriteLine($"bodega recien agregada?: {testing?.Warehouse}");
                 }
-                // Si la lectura no esta en el dictionary
+
+                // Si la lectura esta en el dictionary
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("El dictionary tiene el EPC");
+                    System.Diagnostics.Debug.WriteLine($"El dictionary tiene el EPC: {lastReadingByEPC.EPC}");
 
-                    if (lastReadingByEPC.Warehouse == null)
+                    // Si el epc tiene Bodega en el dictionary
+                    if (lastReadingByEPC.Warehouse != 0)
                     {
-                        System.Diagnostics.Debug.WriteLine($"EPC sin bodega{lastReadingByEPC.EPC}");
+                        if (lastReadingByEPC.Warehouse != selectedWarehouse.Id)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"EPC: {lastReadingByEPC.EPC} con bodega Distinta: {lastReadingByEPC.Warehouse} ");
 
-                        Product product = await productAPI.GetProductByEPCAsync(epc);
-                        lastReadingByEPC.Warehouse = product.Id;
+                            UpdateEPCLocation(epc, selectedWarehouse.Id);
+
+                            lastReadingByEPC.Warehouse = selectedWarehouse.Id;
+
+                            lastReadingByEPC.LastAPICalled = DateTime.Now;
+
+                            System.Diagnostics.Debug.WriteLine($"EPC: {lastReadingByEPC.EPC} con bodega Distinta: {lastReadingByEPC.Warehouse} ");
+
+                        }
+
                     }
+                    else
+                    {
+                        // Si no tiene Bodega y ademas pasaron mas de 30 segundos desde la ultima verificacion
+                        if ((DateTime.Now - lastReadingByEPC.LastAPICalled).TotalSeconds > 10)
+                        {
+                            lastReadingByEPC.LastAPICalled = DateTime.Now;
+                            System.Diagnostics.Debug.WriteLine($"Sin bodega y paso el tiempo.");
 
-                    //if (lastReadingByEPC.Warehouse != selectedWarehouse.Id)
-                    //{
+                            Product prod = await GetProductByEPC(epc);
 
-                    //    System.Diagnostics.Debug.WriteLine("Se actualizara la bodega");
-
-                    //    try {
-                    //        UpdateEPCLocation(epc, selectedWarehouse.Id);
-
-                    //        lastReadingByEPC.LastAPICalled = DateTime.Now;
-                    //        System.Diagnostics.Debug.WriteLine($"UpdateEPCLocation, actualizado");
-
-                    //    }
-                    //    catch (Exception ex) {
-                    //        System.Diagnostics.Debug.WriteLine($"{ex.Message}");
-                    //    }
-                    //}
-
-                    //// Verificar si pasaron mas de 5 segundos desde la ultima lectura.
-                    //if ((DateTime.Now - lastReadingByEPC.LastAPICalled).TotalSeconds > 5)
-                    //{
-                    //    System.Diagnostics.Debug.WriteLine("Pasaron mas de 5 segundos desde la ultima lectura.");
-
-                    //    lastReadingByEPC.LastAPICalled = DateTime.Now;
-                    //}
+                            if (prod != null)
+                            {
+                                if (prod.WarehouseId != selectedWarehouse.Id)
+                                {
+                                    try
+                                    {
+                                        UpdateEPCLocation(epc, selectedWarehouse.Id);
+                                        lastReadingByEPC.Warehouse = selectedWarehouse.Id;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine (ex.ToString());
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-
-
-                //// Comprobación y acción basada en el EPC
-                //if (!readingsInfo.TryGetValue(epc, out Reading ultimaLectura) &&
-                //    (DateTime.Now - ultimaLectura?.LastAPICalled)?.TotalSeconds > 5
-                //    )
-                //{
-                //    System.Diagnostics.Debug.WriteLine("Entra al primer IF");
-                //    if (ultimaLectura?.Warehouse != selectedWarehouse.Id)
-                //    {
-                //        readingsInfo[epc].Warehouse = selectedWarehouse.Id;
-
-                //        // Realizar acción aquí para EPC no leído en los últimos 5 segundos
-                //        updateEPCLocation(epc, selectedWarehouse.Id);
-                //    }
-
-                //    // Actualizar el diccionario
-                //    readingsInfo[epc].LastAPICalled = DateTime.Now;
-                //}
 
 
                 // 
@@ -516,6 +520,7 @@ namespace Tesis_RFID_Integration
             Product respProduct = await productAPI.UpdateProductWarehouse(EPCWithoutSpace, warehouseId);
 
             System.Diagnostics.Debug.WriteLine($"respProduct: {respProduct.EPC}, bodega: {respProduct.WarehouseId}");
+
         }
 
         private void btnReadOnce_Click(object sender, EventArgs e)

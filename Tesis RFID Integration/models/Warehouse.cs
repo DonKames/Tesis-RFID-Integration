@@ -14,7 +14,7 @@ namespace Tesis_RFID_Integration.models
 
         public override string ToString()
         {
-            return this.Name;
+            return Name;
         }
     }
 }
