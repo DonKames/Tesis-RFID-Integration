@@ -528,6 +528,62 @@ namespace Tesis_RFID_Integration
             byte[] arrBuffer = new byte[64000];
             ushort totalLength = 0;
             ushort tagNum = 0;
+
+
+            // Verificacion del modo del lector.
+            byte bParamAddr = 0;
+            byte[] bValue = new byte[2];
+
+            /*  01: Transport
+                02: WorkMode
+                03: DeviceAddr
+                04: FilterTime
+                05: RFPower
+                06: BeepEnable
+                07: UartBaudRate*/
+            bParamAddr = 0x02;
+
+            if (CFHidApi.CFHid_ReadDeviceOneParam(0xFF, bParamAddr, bValue) == false)
+            {
+                SetText("No se pudo recuperar el modo del lector.");
+                return;
+            }
+
+            // Si el lector no esta en modo respuesta, se setea el estado mencionado
+            if (bValue[0] != 00)
+            {
+                System.Diagnostics.Debug.WriteLine("Cambiando a Modo Respuesta");
+
+                byte paramToSet = 0;
+                byte valueToSet = 0;
+
+                /*  01: Transport
+                    02: WorkMode
+                    03: DeviceAddr
+                    04: FilterTime
+                    05: RFPower
+                    06: BeepEnable
+                    07: UartBaudRate*/
+                paramToSet = 0x02;
+                
+                // AnswerMode = 00;
+                // ActiveMode = 01;
+                valueToSet = 00;
+
+                if (CFHidApi.CFHid_SetDeviceOneParam(0xFF, paramToSet, valueToSet) == false)
+                {
+                    SetText("Fallo el Seteo al Modo Respuesta");
+                    return;
+                }
+                SetText("Modo Respuesta Seteado");
+
+                //CFHidApi.CFHid_StopRead(0xFF);
+            }
+            else
+            {
+                SetText("Modo Respuesta Listo\r\n");
+            }
+
             SetText("***Modo Respuesta***\r\n");
             if (CFHidApi.CFHid_InventoryG2(0xFF, arrBuffer, out totalLength, out tagNum))
             {
