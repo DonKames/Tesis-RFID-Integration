@@ -45,8 +45,9 @@ namespace Tesis_RFID_Integration.api
         {
             try
             {
+                string antenna = "Antena Principal";
                 // Crea el objeto que representa el cuerpo de la solicitud
-                var requestBody = new { warehouseId };
+                var requestBody = new { warehouseId, antenna };
                 var content = new StringContent(JsonConvert.SerializeObject(requestBody), Encoding.UTF8, "application/json");
 
                 System.Diagnostics.Debug.WriteLine($"content: {content}");
